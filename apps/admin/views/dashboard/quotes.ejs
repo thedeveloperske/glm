@@ -1,0 +1,22 @@
+<%- include('../layout', { 
+    title: typeof title !== 'undefined' ? title : 'Quotes - GLM Admin',
+    page: typeof page !== 'undefined' ? page : 'quotes',
+    body: `
+    <div class="header">
+        <h1>Quotes</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary">Export</button>
+            <button class="btn btn-primary">View All</button>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3>Quotes Management</h3>
+            <p>View and manage insurance quotes. Database integration coming soon.</p>
+        </div>
+    </div>
+` }) %>

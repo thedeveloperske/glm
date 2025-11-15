@@ -1,0 +1,685 @@
+<%- include('../layout', { 
+    title: typeof title !== 'undefined' ? title : 'Products - GLM Admin',
+    page: typeof page !== 'undefined' ? page : 'products',
+    body: `
+    <div class="header">
+        <h1>Products</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddModal()">Add Product</button>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <table id="productsTable" class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Product Name</th>
+                    <th>Short Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Product</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="productForm" onsubmit="saveProduct(event)" autocomplete="off">
+                <div class="form-group">
+                    <label for="productName">Product Name *</label>
+                    <input type="text" id="productName" name="name" required placeholder="e.g., Comprehensive Motor Insurance" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="productDescription">Short Description *</label>
+                    <textarea id="productDescription" name="shortDescription" required rows="3" placeholder="Enter product short description" autocomplete="off"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productImage">Image URL *</label>
+                    <input type="url" id="productImage" name="imageUrl" required placeholder="https://example.com/image.jpg" autocomplete="off">
+                    <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">Enter a valid image URL</small>
+                </div>
+                <div class="form-group">
+                    <label id="imagePreviewLabel" style="display: none;">Image Preview</label>
+                    <div id="imagePreview" style="margin-top: 8px; display: none;">
+                        <img id="previewImg" src="" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isActive" name="isActive" checked autocomplete="off">
+                        Active
+                    </label>
+                </div>
+                <input type="hidden" id="productId" name="id" autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Enhanced DataTable Styling */
+        .content-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #productsTable_wrapper {
+            padding: 24px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .data-table thead th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            position: relative;
+        }
+
+        .data-table thead th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .data-table thead th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .data-table tbody tr {
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .data-table tbody tr:last-child td:first-child {
+            border-radius: 0 0 0 8px;
+        }
+
+        .data-table tbody tr:last-child td:last-child {
+            border-radius: 0 0 8px 0;
+        }
+
+        .data-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #fff7ed;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+        }
+
+        .data-table tbody td {
+            padding: 16px 20px;
+            color: #374151;
+            font-size: 14px;
+            border: none;
+            vertical-align: middle;
+        }
+
+        .data-table tbody td:first-child {
+            font-weight: 600;
+            color: #f97316;
+        }
+
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .product-image:hover {
+            border-color: #f97316;
+            transform: scale(1.1);
+            transition: all 0.2s;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .text-gray-600 {
+            color: #4b5563;
+        }
+
+        .text-gray-500 {
+            color: #6b7280;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* DataTables Custom Styling */
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-header-left,
+        .table-header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-footer-left,
+        .table-footer-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 0;
+        }
+
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin: 0 8px;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-left: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            padding-top: 16px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 8px 12px;
+            margin: 0 2px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            color: #374151 !important;
+            background: white !important;
+            transition: all 0.2s;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f97316 !important;
+            color: white !important;
+            border-color: #f97316;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #f97316 !important;
+            color: white !important;
+            border-color: #f97316;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Status Badge Styling */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-sm.btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-sm.btn-secondary:hover {
+            background-color: #e5e7eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #111827;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #111827;
+        }
+
+        .modal-content form {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="url"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="url"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <script>
+        let productsTable;
+        let editingProductId = null;
+
+        $(document).ready(function() {
+            loadProducts();
+            
+            // Image preview on URL change
+            document.getElementById('productImage').addEventListener('input', function(e) {
+                const url = e.target.value;
+                const preview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                const previewLabel = document.getElementById('imagePreviewLabel');
+                
+                if (url && isValidUrl(url)) {
+                    previewImg.src = url;
+                    preview.style.display = 'block';
+                    previewLabel.style.display = 'block';
+                    previewImg.onerror = function() {
+                        preview.style.display = 'none';
+                        previewLabel.style.display = 'none';
+                    };
+                } else {
+                    preview.style.display = 'none';
+                    previewLabel.style.display = 'none';
+                }
+            });
+        });
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function loadProducts() {
+            fetch('/api/products')
+                .then(response => response.json())
+                .then(data => {
+                    if (productsTable) {
+                        productsTable.destroy();
+                    }
+
+                    productsTable = $('#productsTable').DataTable({
+                        data: data,
+                        columns: [
+                            { 
+                                data: 'id',
+                                className: 'text-center'
+                            },
+                            { 
+                                data: 'imageUrl',
+                                render: function(data) {
+                                    return '<img src="' + data + '" alt="Product" class="product-image" onerror="this.src=\'https://via.placeholder.com/60x60?text=No+Image\'">';
+                                },
+                                className: 'text-center',
+                                orderable: false
+                            },
+                            { 
+                                data: 'name',
+                                className: 'font-semibold'
+                            },
+                            { 
+                                data: 'shortDescription',
+                                className: 'text-gray-600'
+                            },
+                            {
+                                data: 'isActive',
+                                render: function(data) {
+                                    return '<span class="status-badge ' + (data ? 'status-active' : 'status-inactive') + '">' + 
+                                           (data ? 'Active' : 'Inactive') + '</span>';
+                                },
+                                className: 'text-center'
+                            },
+                            {
+                                data: 'createdAt',
+                                render: function(data) {
+                                    const date = new Date(data);
+                                    return date.toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'short', 
+                                        day: 'numeric' 
+                                    });
+                                },
+                                className: 'text-gray-500'
+                            },
+                            {
+                                data: 'id',
+                                render: function(data) {
+                                    return '<div class="action-buttons">' +
+                                           '<button class="btn btn-secondary btn-sm" onclick="editProduct(' + data + ')">Edit</button>' +
+                                           '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + data + ')">Delete</button>' +
+                                           '</div>';
+                                },
+                                orderable: false,
+                                className: 'text-center'
+                            }
+                        ],
+                        order: [[0, 'desc']],
+                        pageLength: 10,
+                        responsive: true,
+                        language: {
+                            search: "Search:",
+                            lengthMenu: "Show _MENU_ entries",
+                            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                            infoEmpty: "No entries found",
+                            infoFiltered: "(filtered from _TOTAL_ total entries)"
+                        },
+                        dom: '<"table-header"<"table-header-left"l><"table-header-right"f>>rt<"table-footer"<"table-footer-left"i><"table-footer-right"p>>'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading products:', error);
+                    alert('Failed to load products');
+                });
+        }
+
+        function openAddModal() {
+            editingProductId = null;
+            document.getElementById('modalTitle').textContent = 'Add Product';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            document.getElementById('isActive').checked = true;
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imagePreviewLabel').style.display = 'none';
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function editProduct(id) {
+            fetch('/api/products/' + id)
+                .then(response => response.json())
+                .then(data => {
+                    editingProductId = id;
+                    document.getElementById('modalTitle').textContent = 'Edit Product';
+                    document.getElementById('productId').value = data.id;
+                    document.getElementById('productName').value = data.name;
+                    document.getElementById('productDescription').value = data.shortDescription;
+                    document.getElementById('productImage').value = data.imageUrl;
+                    document.getElementById('isActive').checked = data.isActive;
+                    
+                    // Show preview
+                    const preview = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImg');
+                    const previewLabel = document.getElementById('imagePreviewLabel');
+                    if (data.imageUrl) {
+                        previewImg.src = data.imageUrl;
+                        preview.style.display = 'block';
+                        previewLabel.style.display = 'block';
+                    }
+                    
+                    document.getElementById('productModal').style.display = 'flex';
+                })
+                .catch(error => {
+                    console.error('Error loading product:', error);
+                    alert('Failed to load product');
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+            document.getElementById('productForm').reset();
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imagePreviewLabel').style.display = 'none';
+            editingProductId = null;
+        }
+
+        function saveProduct(event) {
+            event.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('productName').value,
+                shortDescription: document.getElementById('productDescription').value,
+                imageUrl: document.getElementById('productImage').value,
+                isActive: document.getElementById('isActive').checked
+            };
+
+            const url = editingProductId ? '/api/products/' + editingProductId : '/api/products';
+            const method = editingProductId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                closeModal();
+                loadProducts();
+                alert(editingProductId ? 'Product updated successfully!' : 'Product added successfully!');
+            })
+            .catch(error => {
+                console.error('Error saving product:', error);
+                alert('Failed to save product');
+            });
+        }
+
+        function deleteProduct(id) {
+            if (!confirm('Are you sure you want to delete this product?')) {
+                return;
+            }
+
+            fetch('/api/products/' + id, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadProducts();
+                    alert('Product deleted successfully!');
+                } else {
+                    alert('Failed to delete product');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting product:', error);
+                alert('Failed to delete product');
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('productModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+` }) %>
+

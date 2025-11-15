@@ -1,0 +1,679 @@
+<%- include('../layout', { 
+    title: typeof title !== 'undefined' ? title : 'Insurance Benefits - GLM Admin',
+    page: typeof page !== 'undefined' ? page : 'benefits',
+    body: `
+    <div class="header">
+        <h1>Insurance Benefits</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddModal()">Add Benefit</button>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <table id="benefitsTable" class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Percentage</th>
+                    <th>Cover Type</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add/Edit Benefit Modal -->
+    <div id="benefitModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Benefit</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="benefitForm" onsubmit="saveBenefit(event)" autocomplete="off">
+                <div class="form-group">
+                    <label for="benefitName">Benefit Name *</label>
+                    <input type="text" id="benefitName" name="name" required placeholder="e.g., Windscreen Cover" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="benefitDescription">Description *</label>
+                    <textarea id="benefitDescription" name="description" required rows="3" placeholder="Enter benefit description" autocomplete="off"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="benefitPercentage">Percentage (%) *</label>
+                    <input type="number" id="benefitPercentage" name="percentage" required step="0.01" min="0" max="100" placeholder="e.g., 15.5" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="coverType">Cover Type *</label>
+                    <select id="coverType" name="coverTypeId" required autocomplete="off">
+                        <option value="">Select Cover Type</option>
+                        <!-- Options will be loaded via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isActive" name="isActive" checked autocomplete="off">
+                        Active
+                    </label>
+                </div>
+                <input type="hidden" id="benefitId" name="id" autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Benefit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Enhanced DataTable Styling */
+        .content-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #benefitsTable_wrapper {
+            padding: 24px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .data-table thead th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            position: relative;
+        }
+
+        .data-table thead th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .data-table thead th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .data-table tbody tr {
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .data-table tbody tr:last-child td:first-child {
+            border-radius: 0 0 0 8px;
+        }
+
+        .data-table tbody tr:last-child td:last-child {
+            border-radius: 0 0 8px 0;
+        }
+
+        .data-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #fff7ed;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+        }
+
+        .data-table tbody td {
+            padding: 16px 20px;
+            color: #374151;
+            font-size: 14px;
+            border: none;
+            vertical-align: middle;
+        }
+
+        .data-table tbody td:first-child {
+            font-weight: 600;
+            color: #f97316;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .text-gray-600 {
+            color: #4b5563;
+        }
+
+        .text-gray-500 {
+            color: #6b7280;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* DataTables Custom Styling */
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-header-left,
+        .table-header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-footer-left,
+        .table-footer-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 0;
+        }
+
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin: 0 8px;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-left: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            padding-top: 16px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 8px 12px;
+            margin: 0 2px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            color: #374151 !important;
+            background: white !important;
+            transition: all 0.2s;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f97316 !important;
+            color: white !important;
+            border-color: #f97316;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #f97316 !important;
+            color: white !important;
+            border-color: #f97316;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Status Badge Styling */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-inactive {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-sm.btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-sm.btn-secondary:hover {
+            background-color: #e5e7eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Cover Type Badge */
+        .cover-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Percentage Badge */
+        .percentage-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #111827;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #111827;
+        }
+
+        .modal-content form {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group input[type="number"],
+
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <script>
+        let benefitsTable;
+        let coverTypes = [];
+        let editingBenefitId = null;
+
+        $(document).ready(function() {
+            loadCoverTypes();
+            loadBenefits();
+        });
+
+        function loadCoverTypes() {
+            fetch('/api/cover-types')
+                .then(response => response.json())
+                .then(data => {
+                    coverTypes = data;
+                    const select = document.getElementById('coverType');
+                    select.innerHTML = '<option value="">Select Cover Type</option>';
+                    data.forEach(ct => {
+                        const option = document.createElement('option');
+                        option.value = ct.id;
+                        option.textContent = ct.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cover types:', error);
+                    alert('Failed to load cover types');
+                });
+        }
+
+        function loadBenefits() {
+            fetch('/api/benefits')
+                .then(response => response.json())
+                .then(data => {
+                    if (benefitsTable) {
+                        benefitsTable.destroy();
+                    }
+
+                    benefitsTable = $('#benefitsTable').DataTable({
+                        data: data,
+                        columns: [
+                            { 
+                                data: 'id',
+                                className: 'text-center'
+                            },
+                            { 
+                                data: 'name',
+                                className: 'font-semibold'
+                            },
+                            { 
+                                data: 'description',
+                                className: 'text-gray-600'
+                            },
+                            { 
+                                data: 'percentage',
+                                render: function(data) {
+                                    return '<span class="percentage-badge">' + parseFloat(data).toFixed(2) + '%</span>';
+                                },
+                                className: 'text-center'
+                            },
+                            { 
+                                data: 'coverTypeName',
+                                render: function(data) {
+                                    return '<span class="cover-type-badge">' + data + '</span>';
+                                }
+                            },
+                            {
+                                data: 'isActive',
+                                render: function(data) {
+                                    return '<span class="status-badge ' + (data ? 'status-active' : 'status-inactive') + '">' + 
+                                           (data ? 'Active' : 'Inactive') + '</span>';
+                                },
+                                className: 'text-center'
+                            },
+                            {
+                                data: 'createdAt',
+                                render: function(data) {
+                                    const date = new Date(data);
+                                    return date.toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'short', 
+                                        day: 'numeric' 
+                                    });
+                                },
+                                className: 'text-gray-500'
+                            },
+                            {
+                                data: 'id',
+                                render: function(data) {
+                                    return '<div class="action-buttons">' +
+                                           '<button class="btn btn-secondary btn-sm" onclick="editBenefit(' + data + ')">Edit</button>' +
+                                           '<button class="btn btn-danger btn-sm" onclick="deleteBenefit(' + data + ')">Delete</button>' +
+                                           '</div>';
+                                },
+                                orderable: false,
+                                className: 'text-center'
+                            }
+                        ],
+                        order: [[0, 'desc']],
+                        pageLength: 10,
+                        responsive: true,
+                        language: {
+                            search: "Search:",
+                            lengthMenu: "Show _MENU_ entries",
+                            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                            infoEmpty: "No entries found",
+                            infoFiltered: "(filtered from _TOTAL_ total entries)"
+                        },
+                        dom: '<"table-header"<"table-header-left"l><"table-header-right"f>>rt<"table-footer"<"table-footer-left"i><"table-footer-right"p>>'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading benefits:', error);
+                    alert('Failed to load benefits');
+                });
+        }
+
+        function openAddModal() {
+            editingBenefitId = null;
+            document.getElementById('modalTitle').textContent = 'Add Benefit';
+            document.getElementById('benefitForm').reset();
+            document.getElementById('benefitId').value = '';
+            document.getElementById('isActive').checked = true;
+            document.getElementById('benefitModal').style.display = 'flex';
+        }
+
+        function editBenefit(id) {
+            fetch('/api/benefits/' + id)
+                .then(response => response.json())
+                .then(data => {
+                    editingBenefitId = id;
+                    document.getElementById('modalTitle').textContent = 'Edit Benefit';
+                    document.getElementById('benefitId').value = data.id;
+                    document.getElementById('benefitName').value = data.name;
+                    document.getElementById('benefitDescription').value = data.description;
+                    document.getElementById('benefitPercentage').value = data.percentage;
+                    document.getElementById('coverType').value = data.coverTypeId;
+                    document.getElementById('isActive').checked = data.isActive;
+                    document.getElementById('benefitModal').style.display = 'flex';
+                })
+                .catch(error => {
+                    console.error('Error loading benefit:', error);
+                    alert('Failed to load benefit');
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('benefitModal').style.display = 'none';
+            document.getElementById('benefitForm').reset();
+            editingBenefitId = null;
+        }
+
+        function saveBenefit(event) {
+            event.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('benefitName').value,
+                description: document.getElementById('benefitDescription').value,
+                percentage: parseFloat(document.getElementById('benefitPercentage').value),
+                coverTypeId: parseInt(document.getElementById('coverType').value),
+                isActive: document.getElementById('isActive').checked
+            };
+
+            const url = editingBenefitId ? '/api/benefits/' + editingBenefitId : '/api/benefits';
+            const method = editingBenefitId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                closeModal();
+                loadBenefits();
+                alert(editingBenefitId ? 'Benefit updated successfully!' : 'Benefit added successfully!');
+            })
+            .catch(error => {
+                console.error('Error saving benefit:', error);
+                alert('Failed to save benefit');
+            });
+        }
+
+        function deleteBenefit(id) {
+            if (!confirm('Are you sure you want to delete this benefit?')) {
+                return;
+            }
+
+            fetch('/api/benefits/' + id, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadBenefits();
+                    alert('Benefit deleted successfully!');
+                } else {
+                    alert('Failed to delete benefit');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting benefit:', error);
+                alert('Failed to delete benefit');
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('benefitModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+` }) %>
